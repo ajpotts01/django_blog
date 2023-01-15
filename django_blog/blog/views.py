@@ -5,7 +5,7 @@ from .models import Post
 
 def post_list(request: HttpRequest) -> HttpResponse:
     posts: list[Post] = Post.published.all()
-
+    
     return render(
         request=request, template_name="blog/post/list.html", context={"posts": posts}
     )
