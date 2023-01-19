@@ -3,6 +3,7 @@ from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Post
+from .forms import EmailPostForm
 
 # class PostListView(ListView):
 #     """
@@ -12,6 +13,7 @@ from .models import Post
 #     context_object_name: str = 'posts'
 #     paginate_by: int = 3
 #     template_name: str = 'blog/post/list.html'
+
 
 def post_list(request: HttpRequest) -> HttpResponse:
     posts: list[Post] = Post.published.all()
@@ -35,7 +37,7 @@ def post_list(request: HttpRequest) -> HttpResponse:
 def post_detail(
     request: HttpRequest, year: int, month: int, day: int, post: str
 ) -> HttpResponse:
-    post = get_object_or_404(
+    post: Post = get_object_or_404(
         klass=Post,
         status=Post.Status.PUBLISHED,
         slug=post,
@@ -46,4 +48,22 @@ def post_detail(
 
     return render(
         request=request, template_name="blog/post/detail.html", context={"post": post}
+    )
+
+
+def post_share(request: HttpRequest, post_id: int):
+    post: Post = get_object_or_404(klass=Post, id=post_id, status=Post.Status.PUBLISHED)
+
+    if request.method == "POST":
+        form: EmailPostForm = EmailPostForm(request.POST)
+
+        if form.is_valid():
+            cd: dict = form.cleaned_data
+    else:
+        form: EmailPostForm = EmailPostForm()
+
+    return render(
+        request=request,
+        template_name="blog/post/share.html",
+        context={"post": post, "form": form},
     )
