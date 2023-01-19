@@ -1,8 +1,17 @@
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import render, get_object_or_404
+from django.views.generic import ListView
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Post
 
+# class PostListView(ListView):
+#     """
+#     Alternative post list view - to demonstrate class-based views over function-based views
+#     """
+#     queryset: list[Post] = Post.published.all()
+#     context_object_name: str = 'posts'
+#     paginate_by: int = 3
+#     template_name: str = 'blog/post/list.html'
 
 def post_list(request: HttpRequest) -> HttpResponse:
     posts: list[Post] = Post.published.all()
