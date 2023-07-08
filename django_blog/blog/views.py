@@ -1,9 +1,11 @@
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView
+from django.core.mail import send_mail
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Post
 from .forms import EmailPostForm
+
 
 # class PostListView(ListView):
 #     """
@@ -53,17 +55,29 @@ def post_detail(
 
 def post_share(request: HttpRequest, post_id: int):
     post: Post = get_object_or_404(klass=Post, id=post_id, status=Post.Status.PUBLISHED)
+    sent: bool = False
 
     if request.method == "POST":
         form: EmailPostForm = EmailPostForm(request.POST)
 
         if form.is_valid():
             cd: dict = form.cleaned_data
+
+            # Send e-mail
+            post_url: str = request.build_absolute_uri(post.get_absolute_url())
+            subject: str = f"{cd['name']} recommends you read {post.title}"
+            message: str = (
+                f"Read {post.title} at {post_url}\n\n"
+                f"{cd['name']}'s comments: {cd['comments']}"
+            )
+
+            send_mail(subject, message, "test@gmail.com", [cd["to"]])
+            sent = True
     else:
         form: EmailPostForm = EmailPostForm()
 
     return render(
         request=request,
         template_name="blog/post/share.html",
-        context={"post": post, "form": form},
+        context={"post": post, "form": form, "sent": sent},
     )
