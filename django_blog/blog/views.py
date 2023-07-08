@@ -1,10 +1,14 @@
-from django.http import Http404, HttpRequest, HttpResponse
-from django.shortcuts import render, get_object_or_404
-from django.views.generic import ListView
+# Django imports
 from django.core.mail import send_mail
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .models import Post
-from .forms import EmailPostForm
+from django.http import Http404, HttpRequest, HttpResponse
+from django.shortcuts import render, get_object_or_404
+from django.views.decorators.http import require_POST
+from django.views.generic import ListView
+
+# Project imports
+from .models import Post, Comment
+from .forms import EmailPostForm, CommentForm
 
 
 # class PostListView(ListView):
@@ -80,4 +84,24 @@ def post_share(request: HttpRequest, post_id: int):
         request=request,
         template_name="blog/post/share.html",
         context={"post": post, "form": form, "sent": sent},
+    )
+
+
+@require_POST
+def post_comment(request: HttpRequest, post_id: int):
+    post: Post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
+
+    comment: Comment = None
+    form: CommentForm = CommentForm(data=request.POST)
+
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.post = post
+
+        comment.save()
+
+    return render(
+        request=request,
+        template_name="blog/post/comment.html",
+        context={"post": post, "form": form, "comment": comment},
     )
