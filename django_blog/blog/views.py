@@ -52,12 +52,18 @@ def post_detail(
         publish__day=day,
     )
 
+    # Is the type correct?
+    comments: list[Comment] = post.comments.filter(active=True)
+    form: CommentForm = CommentForm()
+
     return render(
-        request=request, template_name="blog/post/detail.html", context={"post": post}
+        request=request,
+        template_name="blog/post/detail.html",
+        context={"post": post, "comments": comments, "form": form},
     )
 
 
-def post_share(request: HttpRequest, post_id: int):
+def post_share(request: HttpRequest, post_id: int) -> HttpResponse:
     post: Post = get_object_or_404(klass=Post, id=post_id, status=Post.Status.PUBLISHED)
     sent: bool = False
 
@@ -88,7 +94,7 @@ def post_share(request: HttpRequest, post_id: int):
 
 
 @require_POST
-def post_comment(request: HttpRequest, post_id: int):
+def post_comment(request: HttpRequest, post_id: int) -> HttpResponse:
     post: Post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
 
     comment: Comment = None
