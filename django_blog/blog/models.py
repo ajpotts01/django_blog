@@ -3,6 +3,8 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.urls import reverse
 
+# Third-party, non-Django
+from taggit.managers import TaggableManager
 
 class PublishedManager(models.Manager):
     def get_queryset(self):
@@ -29,8 +31,9 @@ class Post(models.Model):
         max_length=2, choices=Status.choices, default=Status.DRAFT
     )
 
-    objects = models.Manager()
-    published = PublishedManager()
+    objects: models.Manager = models.Manager()
+    published: PublishedManager = PublishedManager()
+    tags: TaggableManager = TaggableManager()
 
     # Django pattern: nested class for defining metadata
     # https://docs.djangoproject.com/en/4.1/topics/db/models/#meta-options
