@@ -101,9 +101,11 @@ def post_comment(request: HttpRequest, post_id: int) -> HttpResponse:
     form: CommentForm = CommentForm(data=request.POST)
 
     if form.is_valid():
+        # form.save creates objects without committing
         comment = form.save(commit=False)
         comment.post = post
 
+        # This actually commits the new comment to the database
         comment.save()
 
     return render(
