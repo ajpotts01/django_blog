@@ -6,6 +6,9 @@ from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView
 
+# Third-party imports
+from taggit.models import Tag
+
 # Project imports
 from .models import Post, Comment
 from .forms import EmailPostForm, CommentForm
@@ -21,8 +24,13 @@ from .forms import EmailPostForm, CommentForm
 #     template_name: str = 'blog/post/list.html'
 
 
-def post_list(request: HttpRequest) -> HttpResponse:
+def post_list(request: HttpRequest, tag_slug: str = None) -> HttpResponse:
     posts: list[Post] = Post.published.all()
+    tag: Tag = None
+
+    if tag_slug:
+        tag = get_object_or_404(klass=Tag, slug=tag_slug)
+        posts = posts.filter(tags__in=[tag])
 
     paginator: Paginator = Paginator(object_list=posts, per_page=3)
     # Can't explicitly state param __key: get is a dictionary method
@@ -36,7 +44,9 @@ def post_list(request: HttpRequest) -> HttpResponse:
         posts = paginator.page(number=1)
 
     return render(
-        request=request, template_name="blog/post/list.html", context={"posts": posts}
+        request=request,
+        template_name="blog/post/list.html",
+        context={"posts": posts, "tag": tag},
     )
 
 
