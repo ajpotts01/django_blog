@@ -1,10 +1,14 @@
 # Django imports
 from django.core.mail import send_mail
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db.models import Count
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView
+
+# Third-party imports
+from taggit.models import Tag
 
 # Project imports
 from .models import Post, Comment
@@ -21,8 +25,13 @@ from .forms import EmailPostForm, CommentForm
 #     template_name: str = 'blog/post/list.html'
 
 
-def post_list(request: HttpRequest) -> HttpResponse:
+def post_list(request: HttpRequest, tag_slug: str = None) -> HttpResponse:
     posts: list[Post] = Post.published.all()
+    tag: Tag = None
+
+    if tag_slug:
+        tag = get_object_or_404(klass=Tag, slug=tag_slug)
+        posts = posts.filter(tags__in=[tag])
 
     paginator: Paginator = Paginator(object_list=posts, per_page=3)
     # Can't explicitly state param __key: get is a dictionary method
@@ -36,7 +45,9 @@ def post_list(request: HttpRequest) -> HttpResponse:
         posts = paginator.page(number=1)
 
     return render(
-        request=request, template_name="blog/post/list.html", context={"posts": posts}
+        request=request,
+        template_name="blog/post/list.html",
+        context={"posts": posts, "tag": tag},
     )
 
 
@@ -56,10 +67,24 @@ def post_detail(
     comments: list[Comment] = post.comments.filter(active=True)
     form: CommentForm = CommentForm()
 
+    # Similar posts
+    post_tags_ids = post.tags.values_list("id", flat=True)
+    similar_posts = Post.published.filter(tags__in=post_tags_ids).exclude(id=post.id)
+
+    # Slicer will only return the first four similar posts
+    similar_posts = similar_posts.annotate(same_tags=Count("tags")).order_by(
+        "-same_tags", "-publish"
+    )[:4]
+
     return render(
         request=request,
         template_name="blog/post/detail.html",
-        context={"post": post, "comments": comments, "form": form},
+        context={
+            "post": post,
+            "comments": comments,
+            "form": form,
+            "similar_posts": similar_posts,
+        },
     )
 
 
