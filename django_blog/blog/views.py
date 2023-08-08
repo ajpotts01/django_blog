@@ -68,7 +68,7 @@ def post_detail(
     form: CommentForm = CommentForm()
 
     # Similar posts
-    post_tags_ids = post.tags.values_list(fields="id", flat=True)
+    post_tags_ids = post.tags.values_list("id", flat=True)
     similar_posts = Post.published.filter(tags__in=post_tags_ids).exclude(id=post.id)
 
     # Slicer will only return the first four similar posts
